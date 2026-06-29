@@ -1,0 +1,156 @@
+'use client';
+
+import { use, useState, useEffect } from 'react';
+import Link from 'next/navigation';
+import { usePlayer } from '@/contexts/PlayerContext';
+import { albums } from '@/data/albums';
+import { tracks } from '@/data/tracks';
+
+function formatDuration(seconds) {
+  if (!seconds || isNaN(seconds)) return '0:00';
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+export default function AlbumDetail({ params: paramsPromise }) {
+  const params = use(paramsPromise);
+  const { playTrack, state } = usePlayer();
+  const { currentTrack, isPlaying } = state || {};
+
+  const [album, setAlbum] = useState(null);
+  const [albumTracks, setAlbumTracks] = useState([]);
+  const [totalDuration, setTotalDuration] = useState(0);
+
+  useEffect(() => {
+    const foundAlbum = albums.find((al) => al.id === params.id);
+    if (foundAlbum) {
+      setAlbum(foundAlbum);
+      
+      const alTracks = foundAlbum.trackIds
+        .map((tid) => tracks.find((t) => t.id === tid))
+        .filter(Boolean);
+      
+      setAlbumTracks(alTracks);
+      
+      const durationSum = alTracks.reduce((acc, curr) => acc + curr.duration, 0);
+      setTotalDuration(durationSum);
+    }
+  }, [params.id]);
+
+  const handlePlayTrack = (track) => {
+    playTrack(track, albumTracks);
+  };
+
+  const handlePlayAll = () => {
+    if (albumTracks.length > 0) {
+      playTrack(albumTracks[0], albumTracks);
+    }
+  };
+
+  if (!album) {
+    return (
+      <div className="playlist-detail animate-fade-in flex-center" style={{ height: '50vh' }}>
+        <p>Album not found</p>
+      </div>
+    );
+  }
+
+  const durationFormatted = `${Math.floor(totalDuration / 60)} min ${totalDuration % 60} sec`;
+
+  return (
+    <div className="playlist-detail animate-fade-in">
+      {/* Header Banner */}
+      <div
+        className="playlist-detail__header"
+        style={{
+          background: `linear-gradient(180deg, ${album.color || '#7c3aed'} 0%, var(--bg-primary) 100%)`
+        }}
+      >
+        <div className="playlist-detail__cover-container">
+          <img src={album.cover} alt={album.title} className="playlist-detail__cover" />
+        </div>
+        <div className="playlist-detail__info">
+          <span className="badge">Album</span>
+          <h2 className="playlist-detail__title">{album.title}</h2>
+          <p className="playlist-detail__desc">By {album.artistName}</p>
+          <div className="playlist-detail__meta">
+            <span className="playlist-detail__author">{album.artistName}</span>
+            <span className="bullet-divider">•</span>
+            <span>{album.year}</span>
+            <span className="bullet-divider">•</span>
+            <span>{albumTracks.length} songs</span>
+            <span className="bullet-divider">•</span>
+            <span className="text-secondary">{durationFormatted}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="playlist-detail__actions">
+        <button className="btn btn-primary btn-lg" onClick={handlePlayAll} disabled={albumTracks.length === 0}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+          Play
+        </button>
+        <button className="btn btn-secondary btn-lg" onClick={handlePlayAll} disabled={albumTracks.length === 0}>
+          Shuffle
+        </button>
+      </div>
+
+      {/* Track List */}
+      <div className="playlist-detail__list">
+        <div className="track-list">
+          <div className="track-list__header">
+            <span className="track-list__header-num">#</span>
+            <span className="track-list__header-title">Title</span>
+            <span className="track-list__header-album">Genre</span>
+            <span className="track-list__header-duration">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </span>
+          </div>
+          {albumTracks.map((track, i) => {
+            const isCurrent = currentTrack?.id === track.id;
+            return (
+              <div
+                key={track.id}
+                className={`track-row ${isCurrent ? 'track-row--active' : ''}`}
+                onClick={() => handlePlayTrack(track)}
+              >
+                <div className="track-row__number-col">
+                  {isCurrent && isPlaying ? (
+                    <div className="mini-equalizer mini-equalizer--playing">
+                      <span className="mini-equalizer__bar" />
+                      <span className="mini-equalizer__bar" />
+                      <span className="mini-equalizer__bar" />
+                    </div>
+                  ) : (
+                    <span className="track-row__number">{i + 1}</span>
+                  )}
+                  <button className="track-row__play-btn" aria-label="Play">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                  </button>
+                </div>
+                <img src={track.cover} alt={track.title} className="track-row__img" />
+                <div className="track-row__info">
+                  <span className="track-row__title text-ellipsis">{track.title}</span>
+                  <span className="track-row__artist text-ellipsis">{track.artist}</span>
+                </div>
+                <span className="track-row__album text-ellipsis">{track.genre}</span>
+                <span className="track-row__duration">
+                  {formatDuration(track.duration)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
