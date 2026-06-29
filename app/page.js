@@ -141,8 +141,8 @@ export default function Home() {
         <section className="home-section">
           <h3 className="home-section__title">AI Recommendations</h3>
           <div className="carousel">
-            {personalizedRecs.map(({ track, reason }) => (
-              <div key={track.id} className="card-hover home-track-card" onClick={() => handlePlayTrack(track, personalizedRecs.map(r => r.track))}>
+            {personalizedRecs.map((track) => (
+              <div key={track.id} className="card-hover home-track-card" onClick={() => handlePlayTrack(track, personalizedRecs)}>
                 <div className="home-track-card__art">
                   <img src={track.cover} alt={track.title} />
                   <button className="card-play-btn" aria-label="Play">
@@ -160,7 +160,7 @@ export default function Home() {
                 <div className="home-track-card__info">
                   <span className="home-track-card__title text-ellipsis">{track.title}</span>
                   <span className="home-track-card__artist text-ellipsis">{track.artist}</span>
-                  <span className="home-track-card__reason text-ellipsis">{reason}</span>
+                  <span className="home-track-card__reason text-ellipsis">{track.reason}</span>
                 </div>
               </div>
             ))}
