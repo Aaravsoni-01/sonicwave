@@ -15,7 +15,7 @@ export default function Home() {
   const { currentTrack, isPlaying } = state || {};
   const [recentlyPlayed, setRecentlyPlayed] = useState([]);
   const [personalizedRecs, setPersonalizedRecs] = useState([]);
-  const [timeBasedRecs, setTimeBasedRecs] = useState({ suggestion: '', tracks: [] });
+  const [timeBasedRecs, setTimeBasedRecs] = useState([]);
 
   useEffect(() => {
     // Load recently played tracks
@@ -34,7 +34,7 @@ export default function Home() {
     setPersonalizedRecs(recommendations.getPersonalized(6));
 
     // Load time-based suggestions
-    setTimeBasedRecs(recommendations.getTimeBasedSuggestions());
+    setTimeBasedRecs(recommendations.getTimeBasedSuggestions() || []);
 
     // Update listening streak
     dataStore.updateStreak();
@@ -51,13 +51,13 @@ export default function Home() {
       <section className="home-hero">
         <div className="home-hero__content">
           <span className="home-hero__subtitle">Welcome Back</span>
-          <h2 className="home-hero__title">{timeBasedRecs.suggestion || 'Ready for some music?'}</h2>
+          <h2 className="home-hero__title">{timeBasedRecs[0]?.reason || 'Ready for some music?'}</h2>
           <p className="home-hero__desc">Discover personalized mixes and fresh releases hand-picked for you.</p>
           <div className="home-hero__actions">
-            {timeBasedRecs.tracks.length > 0 && (
+            {timeBasedRecs.length > 0 && (
               <button 
                 className="btn btn-primary"
-                onClick={() => handlePlayTrack(timeBasedRecs.tracks[0], timeBasedRecs.tracks)}
+                onClick={() => handlePlayTrack(timeBasedRecs[0], timeBasedRecs)}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M8 5v14l11-7z"/>
@@ -77,12 +77,12 @@ export default function Home() {
       </section>
 
       {/* Time-Based Recommendations */}
-      {timeBasedRecs.tracks.length > 0 && (
+      {timeBasedRecs.length > 0 && (
         <section className="home-section">
           <h3 className="home-section__title">Time-of-Day Soundtrack</h3>
           <div className="carousel">
-            {timeBasedRecs.tracks.map((track) => (
-              <div key={track.id} className="card-hover home-track-card" onClick={() => handlePlayTrack(track, timeBasedRecs.tracks)}>
+            {timeBasedRecs.map((track) => (
+              <div key={track.id} className="card-hover home-track-card" onClick={() => handlePlayTrack(track, timeBasedRecs)}>
                 <div className="home-track-card__art">
                   <img src={track.cover} alt={track.title} />
                   <button className="card-play-btn" aria-label="Play">
